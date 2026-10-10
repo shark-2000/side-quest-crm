@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {normalizeFirecrawl,discoverFirecrawl} from '../scripts/firecrawl-scout.mjs';
+const page={url:'https://jobs.lever.co/example/123',title:'SQL freelance contract',markdown:'Build a reporting pipeline. SQL required. Scope and milestones are to be discussed. '.repeat(3),metadata:{statusCode:200}};
+assert(normalizeFirecrawl(page));assert.equal(normalizeFirecrawl(page).workMode,'unknown');
+for(const p of [{...page,url:'https://evil.example/job'},{...page,url:'https://jobs.lever.co.evil.example/job'},{...page,markdown:'Please verify you are human '+page.markdown},{...page,metadata:{statusCode:403}},{...page,title:'Permanent full-time engineer'},{...page,markdown:'snippet'}])assert.equal(normalizeFirecrawl(p),null);
+let calls=0;
+const fake=async(url,options)=>{calls++;assert.equal(url,'https://api.firecrawl.dev/v2/search');assert.equal(options.redirect,'error');const b=JSON.parse(options.body);assert.equal(b.limit,5);assert.equal(b.scrapeOptions.proxy,'basic');assert(b.includeDomains.includes('jobs.lever.co'));return new Response(JSON.stringify({success:true,data:{web:[page,page]}}));};
+assert.equal((await discoverFirecrawl({enabled:false},fake)).status,'disabled');assert.equal(calls,0);
+assert.equal((await discoverFirecrawl({enabled:true,queries:['SQL']},fake)).reason,'missing_key');assert.equal(calls,0);
+const result=await discoverFirecrawl({enabled:true,apiKey:'test',queries:['SQL contract','Python']},fake);assert.equal(calls,1);assert.equal(result.results.length,1);
+assert.equal((await discoverFirecrawl({enabled:true,apiKey:'test',queries:['SQL']},async()=>new Response('',{status:402}))).reason,'credits_exhausted');
+assert.equal((await discoverFirecrawl({enabled:true,apiKey:'test',queries:['SQL']},async()=>{throw Error('token must never be logged')})).reason,'provider_unavailable');
+console.log('Firecrawl passed: private key handling, bounded search, allowed domains, block/error filtering and credit exhaustion.');

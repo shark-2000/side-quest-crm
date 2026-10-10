@@ -9,12 +9,17 @@ on:
         type: choice
         options: [all, gigs, followups]
         default: all
+      firecrawl:
+        description: 'Also search public boards with Firecrawl (requires API key secret; consumes credits)'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
       - '.github/workflows/crm-sync.yml'
       - 'scripts/crm-sync.mjs'
       - 'scripts/opportunity-scout.mjs'
+      - 'scripts/firecrawl-scout.mjs'
       - 'worker/ecosystem-core.js'
 permissions:
   contents: read
@@ -34,4 +39,6 @@ jobs:
       - name: Refresh follow-up digest
         env:
           CRM_COMMAND: ${{ inputs.command || 'all' }}
+          FIRECRAWL_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.firecrawl || github.event_name == 'schedule' && vars.FIRECRAWL_ENABLED == 'true' }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: node scripts/crm-sync.mjs

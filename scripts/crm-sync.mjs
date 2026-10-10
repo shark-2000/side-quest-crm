@@ -1,4 +1,5 @@
 import {discoverOpportunities} from './opportunity-scout.mjs';
+import {discoverFirecrawl} from './firecrawl-scout.mjs';
 const site='https://katyayan-cloud-data.bubblymink4.chatgpt.site';
 const url=new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL);url.searchParams.set('audience',site+'/crm');
 const identity=await fetch(url,{headers:{Authorization:'Bearer '+process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN},signal:AbortSignal.timeout(20000)});
@@ -22,6 +23,15 @@ console.log('CRM follow-up digest calculated in GitHub Actions and saved success
 
 if(command!=='followups'&&discovery?.enabled){
  const report=await discoverOpportunities(discovery);
+ const firecrawlRequested=process.env.FIRECRAWL_ENABLED==='true';
+ // Scheduled Firecrawl is daily; manual dispatch can opt in separately.
+ const firecrawlSlot=process.env.GITHUB_EVENT_NAME==='workflow_dispatch'||new Date().getUTCHours()<6;
+ if(firecrawlRequested&&firecrawlSlot){
+  const extra=await discoverFirecrawl({enabled:true,apiKey:process.env.FIRECRAWL_API_KEY,queries:discovery.queries});
+  if(extra.status==='error')console.log('::warning::Firecrawl discovery unavailable: '+extra.reason+'. Freehire results are retained.');
+  else console.log('Firecrawl public search completed within the five-page limit.');
+  const merged=new Map([...extra.results,...report.results].map(o=>[o.url,o]));report.results=[...merged.values()].slice(0,20);if(extra.status==='error')report.status='error';
+ }
  const imported=await fetch(site+'/api/crm/discover',{method:'POST',headers:authorized,body:JSON.stringify(report),signal:AbortSignal.timeout(60000)});
  if(!imported.ok)throw Error('Saving discovery results failed with HTTP '+imported.status+'.');
  console.log(report.status==='ok'?'Public opportunity discovery completed.':'Public discovery provider is unavailable or degraded. Manual imports remain available.');

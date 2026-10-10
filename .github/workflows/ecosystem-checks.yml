@@ -33,6 +33,7 @@ jobs:
           node tests/crm.test.mjs
           node tests/ecosystem.test.mjs
           node tests/resume-search.test.mjs
+          node tests/firecrawl.test.mjs
           node tests/databricks-personal.test.mjs
           python3 -m unittest discover -s tests -p 'personal_agent_test.py'
           bash scripts/build.sh
