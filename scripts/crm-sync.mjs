@@ -8,8 +8,15 @@ const {value:token}=await identity.json();console.log('::add-mask::'+token);
 const authorized={Authorization:'Bearer '+token,'Content-Type':'application/json'};
 const res=await fetch(site+'/api/crm/run',{method:'POST',headers:authorized,signal:AbortSignal.timeout(60000)});
 if(!res.ok)throw Error('CRM snapshot failed with HTTP '+res.status+'.');
-const {leads,today,truncated,discovery}=await res.json();
+const {leads,today,truncated,discovery,firecrawl}=await res.json();
 if(!Array.isArray(leads)||!/^\d{4}-\d{2}-\d{2}$/.test(today))throw Error('Invalid CRM snapshot.');
+if(firecrawl){
+ const report=await discoverFirecrawl({enabled:true,apiKey:process.env.FIRECRAWL_API_KEY,queries:firecrawl.queries});
+ const saved=await fetch(site+'/api/crm/discover',{method:'POST',headers:authorized,body:JSON.stringify({...report,requestId:firecrawl.id}),signal:AbortSignal.timeout(60000)});
+ if(!saved.ok)throw Error('Saving portal web search failed with HTTP '+saved.status+'.');
+ console.log('Portal web search finished: '+report.status+'.');
+}
+if(process.env.CRM_COMMAND==='queue')process.exit(0);
 const command=process.env.CRM_COMMAND||'all';
 if(!['all','gigs','followups'].includes(command))throw Error('Choose all, gigs or followups.');
 if(command!=='gigs'){

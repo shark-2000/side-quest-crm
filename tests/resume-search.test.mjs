@@ -31,5 +31,13 @@ try{
  await env.BUCKET.put('crm/search-lock.json',JSON.stringify({startedAt:0}));
  globalThis.fetch=async()=>new Response('down',{status:503});
  const degraded=await handleCRM(request({version:1}),env,'page');assert.equal((await degraded.json()).status,'error');
+ const webRequest=(body,extra={})=>new Request(base+'/api/crm/opportunities/firecrawl',{method:'POST',headers:{'Content-Type':'application/json',Origin:base,'oai-authenticated-user-id':'owner','oai-authenticated-user-email':'owner@example.com',...extra},body:JSON.stringify(body)});
+ assert.equal((await handleCRM(webRequest({version:1}),env,'page')).status,400);
+ await env.BUCKET.put('crm/profile.json',JSON.stringify({...profile,discoveryEnabled:true}));
+ assert.equal((await handleCRM(webRequest({version:0}),env,'page')).status,409);
+ assert.equal((await handleCRM(webRequest({version:1},{Origin:'https://evil.example'}),env,'page')).status,403);
+ const queued=await handleCRM(webRequest({version:1}),env,'page');assert.equal(queued.status,202);
+ const job=await (await env.BUCKET.get('crm/firecrawl-job.json')).json();assert.equal(job.status,'queued');assert.deepEqual(job.queries,[profile.queries[0]]);assert(!JSON.stringify(job).includes('private@example.com'));
+ assert.equal((await handleCRM(webRequest({version:1}),env,'page')).status,429);
 }finally{globalThis.fetch=original;}
 console.log('Resume search passed: local extraction, contact exclusion, search limits, owner/CSRF/version gates, immediate discovery, cooldown and honest provider failure.');

@@ -2,6 +2,7 @@ name: Refresh micro CRM
 on:
   schedule:
     - cron: '17 */6 * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       command:
@@ -39,7 +40,7 @@ jobs:
       - name: Refresh follow-up digest
         if: inputs.command != 'firecrawl-test'
         env:
-          CRM_COMMAND: ${{ inputs.command || 'all' }}
+          CRM_COMMAND: ${{ github.event.schedule == '*/5 * * * *' && 'queue' || inputs.command || 'all' }}
           FIRECRAWL_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.firecrawl || github.event_name == 'schedule' && vars.FIRECRAWL_ENABLED == 'true' }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRE_CRAWL_API || secrets.FIRECRAWL_API_KEY }}
         run: node scripts/crm-sync.mjs
