@@ -7,7 +7,7 @@ on:
       command:
         description: 'Run follow-ups, find gigs from the saved profile, or both'
         type: choice
-        options: [all, gigs, followups]
+        options: [all, gigs, followups, firecrawl-test]
         default: all
       firecrawl:
         description: 'Also search public boards with Firecrawl (requires API key secret; consumes credits)'
@@ -37,8 +37,14 @@ jobs:
         with:
           node-version: '24'
       - name: Refresh follow-up digest
+        if: inputs.command != 'firecrawl-test'
         env:
           CRM_COMMAND: ${{ inputs.command || 'all' }}
           FIRECRAWL_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.firecrawl || github.event_name == 'schedule' && vars.FIRECRAWL_ENABLED == 'true' }}
-          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRE_CRAWL_API || secrets.FIRECRAWL_API_KEY }}
         run: node scripts/crm-sync.mjs
+      - name: Test Firecrawl connection without importing gigs
+        if: github.event_name == 'workflow_dispatch' && inputs.command == 'firecrawl-test'
+        env:
+          FIRECRAWL_API_KEY: ${{ secrets.FIRE_CRAWL_API || secrets.FIRECRAWL_API_KEY }}
+        run: node scripts/firecrawl-smoke.mjs

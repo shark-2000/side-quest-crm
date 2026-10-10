@@ -5,10 +5,12 @@ Firecrawl is an opt-in GitHub Actions source. The private **Find gigs now** butt
 ## Enable a manual search
 
 1. Create a Firecrawl account on its free plan and obtain an API key. Do not enable paid top-ups if you want to stay within the free allocation.
-2. In this GitHub repository, open Settings → Secrets and variables → Actions and add the repository secret `FIRECRAWL_API_KEY`. Never put the key into the profile form, repository, workflow inputs or chat.
+2. In this GitHub repository, open Settings → Secrets and variables → Actions and add the repository secret `FIRE_CRAWL_API`. The workflow also supports `FIRECRAWL_API_KEY` as a fallback and maps the selected secret into the runtime variable `FIRECRAWL_API_KEY`. Never put the key into the profile form, repository, workflow inputs or chat.
 3. Save your service, skills and search phrases in the private CRM. Scheduled discovery must be **On** so the runner is authorized to collect gigs.
 4. Open **Refresh micro CRM** in Actions → Run workflow. Choose command **gigs** and check **firecrawl**.
 5. Open Find gigs in the private CRM after the run. Results have source `other`, an original posting link and a description beginning `Discovery: Firecrawl public web search`. Location, age, client identity and eligibility remain unverified until you review them.
+
+For a credential-only smoke test, select command **firecrawl-test**. It searches a generic SQL contract query, prints only status and a count, and never changes your profile or imports gigs. A valid response with zero qualifying results still verifies the API connection.
 
 ## Optional unattended searches
 
