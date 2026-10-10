@@ -8,6 +8,8 @@ on:
       - 'tests/**'
       - 'vendor/**'
       - 'tools/**'
+      - 'databricks/**'
+      - '.github/workflows/databricks-personal.yml'
       - '.github/workflows/ecosystem-checks.yml'
   pull_request:
 permissions:
@@ -20,6 +22,9 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
       - name: Build and test
         run: |
           node scripts/build-crm-pages.mjs
@@ -27,5 +32,7 @@ jobs:
           node tests/enquiries.test.mjs
           node tests/crm.test.mjs
           node tests/ecosystem.test.mjs
+          node tests/databricks-personal.test.mjs
+          python3 -m unittest discover -s tests -p 'personal_agent_test.py'
           bash scripts/build.sh
           node scripts/validate-artifact.mjs

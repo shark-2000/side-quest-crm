@@ -1,0 +1,26 @@
+name: Personal research with Databricks
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 3 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: databricks-personal
+  cancel-in-progress: false
+jobs:
+  research:
+    if: github.event_name == 'workflow_dispatch' || vars.DATABRICKS_PERSONAL_SCHEDULE == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Run the private personal research job
+        env:
+          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+          DATABRICKS_JOB_ID: ${{ vars.DATABRICKS_JOB_ID }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: node scripts/databricks-personal.mjs

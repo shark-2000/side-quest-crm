@@ -25,6 +25,10 @@ The private workspace automatically includes enquiries from the portfolio form. 
 
 `Publish Side Quest CRM` rebuilds the sample interface and deploys `docs/` to GitHub Pages.
 
+## Optional personal AI research
+
+The [Databricks integration](databricks/README.md) adds a bounded evidence-search, draft and review agent for non-commercial personal research in Free Edition. GitHub Actions can trigger a configured serverless job; inputs, results and traces stay in private Delta tables. Setup and a live workspace test are required before enabling its optional daily schedule. The existing CRM scoring and template UI are unchanged, and no real client records are transferred automatically.
+
 ## Development
 
 Requires Node.js 24. No third-party npm dependencies.
