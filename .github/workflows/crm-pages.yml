@@ -1,0 +1,36 @@
+name: Publish Side Quest CRM
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'worker/crm.html'
+      - 'scripts/build-crm-pages.mjs'
+      - '.github/workflows/crm-pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: crm-pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Build public demo
+        run: node scripts/build-crm-pages.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4

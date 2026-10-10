@@ -1,0 +1,23 @@
+KATYAYAN SHARMA | FREELANCE PROFILE KIT
+
+HEADLINE
+Cloud Data & BI Automation Engineer | Python, SQL, Databricks, AWS
+
+SHORT
+I help teams automate BI workflows, build analytics-ready data pipelines, and troubleshoot reporting platforms using Python, SQL, Databricks, AWS and Tableau.
+
+OVERVIEW
+I help teams reduce manual reporting work through BI automation, data pipelines and analytics platform troubleshooting.
+
+PORTFOLIO
+https://github.com/shark-2000/my_finance_hub
+
+CONTACT
+https://shark-2000.github.io/#enquiry
+
+STARTER OFFERS
+1. Automate one recurring BI task: code, configuration, logs, runbook and walkthrough.
+2. Build one source-to-reporting pipeline: transformations, validation queries and handover notes.
+3. Diagnose one analytics platform issue: findings, remediation and operating guidance.
+
+Agree access, scope, timeline, exclusions and acceptance criteria before quoting.

@@ -1,0 +1,27 @@
+name: Refresh micro CRM
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/crm-sync.yml'
+      - 'scripts/crm-sync.mjs'
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: micro-crm-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Refresh follow-up digest
+        run: node scripts/crm-sync.mjs
