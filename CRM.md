@@ -45,6 +45,10 @@ The tests cover enquiry persistence, validation, owner authorization, edit confl
 
 ## Freelance ecosystem
 
+Resume intake is under My service. Paste plain text or load a TXT file, select your offer, extract suggestions locally, and verify every detected skill and evidence line. PDF/DOCX binary parsing is not implemented; copy text from those files. Keyword mentions are not proficiency or verified experience. The raw input stays in browser memory and is not saved or sent to a provider. Only reviewed profile fields are saved privately.
+
+Search phrases can be suggested from service and skills, edited and saved. Save profile & find gigs calls the owner-protected POST /api/crm/opportunities/search endpoint immediately. The backend uses only saved search phrases, requires the current profile version and same-site origin, and limits manual attempts to once per two minutes. Results are deduplicated and scored through the existing pipeline. Provider outages are shown as degraded, with no invented matches. Scheduled discovery must be explicitly enabled separately; the CRM GitHub Action exposes all/gigs/followups commands. An immediate search runs through the private backend, not a secret-bearing browser dispatch to GitHub.
+
 Open My service first and save a focused service, deliverable skills, working languages and real evidence. New real profiles begin blank; the public demo profile is fictional. Find gigs supports posting-text intake and up to 20 JSON records per import. The backend normalizes HTTPS URLs, skips duplicates and lists up to 1,000 opportunities. Upstream scraper records without descriptions are skipped by the local conversion utility.
 
 Scores use four transparent dimensions with weights adapted from AI Job Search: technical 30%, evidence overlap 25%, delivery location 15%, service alignment 30%. Unknown requirements and unknown working locations receive low provisional scores. Scores are not AI conclusions. Deadline, remote-only and declared-language conflicts are visible gates; geographic eligibility remains a manual verification.

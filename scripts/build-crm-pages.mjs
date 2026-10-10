@@ -28,6 +28,7 @@ async function api(path,options={}){
  const data=JSON.parse(options.body||'{}');
  if(path==='/api/crm/profile'&&method==='GET')return {profile:structuredClone(demoProfile)};
  if(path==='/api/crm/profile'&&method==='PUT'){Object.assign(demoProfile,data,{version:data.version+1});return {profile:structuredClone(demoProfile)}}
+ if(path==='/api/crm/opportunities/search'&&method==='POST')return {ok:true,demo:true,status:'ok',added:0,duplicates:demoGigs.length};
  if(path==='/api/crm/opportunities'&&method==='GET')return {opportunities:demoGigs.map(o=>({...structuredClone(o),assessment:ecoAssess(o,demoProfile,demoToday)})).sort((a,b)=>(b.assessment.score??-1)-(a.assessment.score??-1)),truncated:false,discovery:null};
  if(path==='/api/crm/opportunities'&&method==='POST'){let added=0,duplicates=0;for(const raw of data.opportunities||[data]){const o=ecoOpportunity(raw);if(demoGigs.some(g=>o.url?g.url===o.url:g.title===o.title&&g.company===o.company)){duplicates++;continue}demoGigs.unshift({...o,id:crypto.randomUUID(),status:'new',notes:'',proposal:'',leadId:'',version:0,createdAt:new Date().toISOString()});added++;}return {added,duplicates}}
  if(path.startsWith('/api/crm/opportunities/')){const parts=path.split('/'),o=demoGigs.find(g=>g.id===parts[4]);if(!o)throw Error('Demo opportunity not found.');if(data.version!==o.version)throw Error('Reload before saving.');

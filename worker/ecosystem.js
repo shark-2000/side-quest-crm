@@ -9,6 +9,15 @@ async function ecoDiscovery(request,env,claims){
 export async function handleEcosystem(request,env){
  const path=new URL(request.url).pathname;if(!path.startsWith('/api/crm/profile')&&!path.startsWith('/api/crm/opportunities'))return null;
  try{
+  if(path==='/api/crm/opportunities/search'&&request.method==='POST'){
+   const d=await ecoBody(request),p=await ecoProfile(env);if(d.version!==p.version)return crmJSON({error:'Profile changed. Reload it before searching.'},409);
+   if(!p.service||!p.skills.length||!p.queries.length)return crmJSON({error:'Save your service, skills and search phrases first.'},400);
+   const lockKey='crm/search-lock.json',lock=await env.BUCKET.get(lockKey),last=lock?await lock.json():null;
+   if(last&&Date.now()-last.startedAt<120000)return crmJSON({error:'A search was started recently. Wait two minutes before searching again.'},429);
+   const locked=await env.BUCKET.put(lockKey,JSON.stringify({startedAt:Date.now()}),{onlyIf:lock?{etagMatches:lock.etag}:new Headers({'If-None-Match':'*'})});if(!locked)return crmJSON({error:'A search is already starting. Please wait.'},429);
+   const report=await discoverOpportunities({enabled:true,queries:p.queries}),saved=report.results.length?await ecoAdd(env,report.results):{added:0,duplicates:0};
+   await env.BUCKET.put('crm/discovery.json',JSON.stringify({status:report.status,updatedAt:new Date().toISOString(),runId:'manual',...saved}));return crmJSON({ok:true,status:report.status,...saved});
+  }
   if(path==='/api/crm/profile'&&request.method==='GET')return crmJSON({profile:await ecoProfile(env)});
   if(path==='/api/crm/profile'&&request.method==='PUT'){
    const d=await ecoBody(request),array=(a,n,max)=>Array.isArray(a)&&a.length<=n&&a.every(s=>typeof s==='string'&&s.trim()&&s.length<=max);

@@ -11,6 +11,10 @@ Four sections keep the workflow simple:
 - **Proposals:** prepare evidence-based templates, save drafts and build a prompt for an AI review you initiate yourself.
 - **My service:** declare skills, real work evidence and search preferences; review recurring skill gaps.
 
+Start in **My service**: paste resume text or load a TXT file, extract suggestions, review the service/skills/evidence/search phrases, then choose **Save profile & find gigs**. PDF and DOCX resumes currently require copying their text into the form. Extraction is local keyword matching, not AI or proof of proficiency. The raw resume is never uploaded or retained; only fields you review and save are stored in the private profile. Resume data is not sent to Databricks.
+
+**Find gigs now** performs immediate private discovery from saved queries. Scheduled discovery uses the same phrases every six hours when enabled. For a manual GitHub Action, open **Refresh micro CRM**, choose **Run workflow**, and select command **gigs**. Automatic discovery currently uses freehire's public aggregator; postings on other sites can be imported manually. This is one owner workspace, not a multi-candidate service.
+
 The layout works on phones and desktops.
 
 ## Public demo and real workspace

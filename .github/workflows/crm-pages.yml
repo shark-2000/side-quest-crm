@@ -6,6 +6,7 @@ on:
       - 'docs/**'
       - 'worker/crm.html'
       - 'worker/ecosystem-*.js'
+      - 'worker/resume-core.js'
       - 'worker/ecosystem-panels.html'
       - 'scripts/render-crm.mjs'
       - 'scripts/build-crm-pages.mjs'

@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import {resumeParse,profileSearches} from '../worker/resume-core.js';
+import {handleCRM} from '../worker/index.js';
+const text='Sample Candidate\nData Engineer\nEmail: private@example.com\nPhone: +91 98765 43210\nSkills: SQL, Python, Databricks, GCP, Power BI\nBuilt SQL reports using sample retail data.\nAutomated Excel cleanup workflows.\nLanguages: English, Hindi';
+const parsed=resumeParse(text,'SQL dashboard reporting');
+assert.deepEqual(parsed.skills,['SQL','Python','Power BI','Databricks','GCP','Excel']);
+assert.equal(parsed.service,'SQL dashboard reporting');
+assert(parsed.evidence.includes('Built SQL reports'));
+assert(!parsed.evidence.includes('private@example.com'));
+assert(!JSON.stringify(parsed).includes('98765'));
+assert.deepEqual(parsed.languages,['English','Hindi']);
+assert(parsed.queries.every(q=>q.length<=80&&!q.includes('@')));
+assert.throws(()=>resumeParse('tiny'));
+assert.throws(()=>resumeParse('x'.repeat(30001)));
+assert.throws(()=>profileSearches({service:'',skills:[]}));
+assert(resumeParse('Cloud Engineer '+ 'Amazon Web Services, k8s, postgres. '.repeat(3)).skills.includes('AWS'));
+class Bucket{constructor(){this.m=new Map();this.n=0;}async get(k){const v=this.m.get(k);return v?{etag:v.etag,json:async()=>JSON.parse(v.body)}:null;}async put(k,body,opt={}){const old=this.m.get(k),c=opt.onlyIf;if(c instanceof Headers&&c.get('If-None-Match')==='*'&&old)return null;if(c?.etagMatches&&c.etagMatches!==old?.etag)return null;this.m.set(k,{body,etag:String(++this.n)});return {};}}
+const base='https://katyayan-cloud-data.bubblymink4.chatgpt.site';
+const env={BUCKET:new Bucket(),OWNER_EMAIL:'owner@example.com'};
+const request=(body={},extra={})=>new Request(base+'/api/crm/opportunities/search',{method:'POST',headers:{'Content-Type':'application/json',Origin:base,'oai-authenticated-user-id':'owner','oai-authenticated-user-email':'owner@example.com',...extra},body:JSON.stringify(body)});
+let calls=0;const original=globalThis.fetch;
+globalThis.fetch=async(url,opts)=>{calls++;assert.equal(url.hostname,'freehire.me');assert(!url.href.includes('private%40'));assert(!url.href.includes('98765'));assert.equal(opts.redirect,'error');return new Response(JSON.stringify({data:[{title:'SQL contract',company:'Sample',url:'https://example.com/contract',description:'Build SQL reports',skills:['SQL'],work_mode:'remote',enrichment:{employment_type:'contract'}}]}));};
+try{
+ assert.equal((await handleCRM(new Request(base+'/api/crm/opportunities/search',{method:'POST'}),env,'page')).status,401);
+ assert.equal((await handleCRM(request({version:1},{Origin:'https://evil.example'}),env,'page')).status,403);
+ assert.equal((await handleCRM(request({version:1},{'oai-authenticated-user-email':'other@example.com'}),env,'page')).status,403);
+ const profile={...parsed,remoteOnly:true,discoveryEnabled:false,version:1};await env.BUCKET.put('crm/profile.json',JSON.stringify(profile));
+ assert.equal((await handleCRM(request({version:0}),env,'page')).status,409);assert.equal(calls,0);
+ const r=await handleCRM(request({version:1}),env,'page');assert.equal(r.status,200);assert.equal((await r.json()).added,1);assert.equal(calls,3);
+ assert.equal((await handleCRM(request({version:1}),env,'page')).status,429);assert.equal(calls,3);
+ await env.BUCKET.put('crm/search-lock.json',JSON.stringify({startedAt:0}));
+ globalThis.fetch=async()=>new Response('down',{status:503});
+ const degraded=await handleCRM(request({version:1}),env,'page');assert.equal((await degraded.json()).status,'error');
+}finally{globalThis.fetch=original;}
+console.log('Resume search passed: local extraction, contact exclusion, search limits, owner/CSRF/version gates, immediate discovery, cooldown and honest provider failure.');

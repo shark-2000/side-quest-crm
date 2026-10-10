@@ -3,6 +3,12 @@ on:
   schedule:
     - cron: '17 */6 * * *'
   workflow_dispatch:
+    inputs:
+      command:
+        description: 'Run follow-ups, find gigs from the saved profile, or both'
+        type: choice
+        options: [all, gigs, followups]
+        default: all
   push:
     branches: [main]
     paths:
@@ -26,4 +32,6 @@ jobs:
         with:
           node-version: '24'
       - name: Refresh follow-up digest
+        env:
+          CRM_COMMAND: ${{ inputs.command || 'all' }}
         run: node scripts/crm-sync.mjs

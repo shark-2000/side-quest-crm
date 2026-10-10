@@ -9,16 +9,20 @@ const res=await fetch(site+'/api/crm/run',{method:'POST',headers:authorized,sign
 if(!res.ok)throw Error('CRM snapshot failed with HTTP '+res.status+'.');
 const {leads,today,truncated,discovery}=await res.json();
 if(!Array.isArray(leads)||!/^\d{4}-\d{2}-\d{2}$/.test(today))throw Error('Invalid CRM snapshot.');
+const command=process.env.CRM_COMMAND||'all';
+if(!['all','gigs','followups'].includes(command))throw Error('Choose all, gigs or followups.');
+if(command!=='gigs'){
 const open=l=>!['won','lost'].includes(l.stage);
 const digest={today,truncated,total:leads.length,active:leads.filter(open).length,won:leads.filter(l=>l.stage==='won').length,due:leads.filter(l=>open(l)&&l.followUp&&l.followUp<=today).map(l=>l.id)};
 const saved=await fetch(site+'/api/crm/digest',{method:'POST',headers:authorized,body:JSON.stringify(digest),signal:AbortSignal.timeout(60000)});
 if(!saved.ok)throw Error('Saving CRM digest failed with HTTP '+saved.status+'.');
 const result=await saved.json();if(result.ok!==true)throw Error('CRM refresh did not confirm success.');
 console.log('CRM follow-up digest calculated in GitHub Actions and saved successfully.');
+}
 
-if(discovery?.enabled){
+if(command!=='followups'&&discovery?.enabled){
  const report=await discoverOpportunities(discovery);
  const imported=await fetch(site+'/api/crm/discover',{method:'POST',headers:authorized,body:JSON.stringify(report),signal:AbortSignal.timeout(60000)});
  if(!imported.ok)throw Error('Saving discovery results failed with HTTP '+imported.status+'.');
  console.log(report.status==='ok'?'Public opportunity discovery completed.':'Public discovery provider is unavailable or degraded. Manual imports remain available.');
-}else console.log('Public opportunity discovery is off. Enable it in My service.');
+}else if(command!=='followups')console.log('Public opportunity discovery is off. Enable it in My service.');
