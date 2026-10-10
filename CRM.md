@@ -42,3 +42,15 @@ node scripts/validate-artifact.mjs
 ```
 
 The tests cover enquiry persistence, validation, owner authorization, edit conflicts, CSRF, valid and forged signatures, repository/branch/audience restrictions and digest storage. Visual browser QA was unavailable in the authoring environment.
+
+## Freelance ecosystem
+
+Open My service first and save a focused service, deliverable skills, working languages and real evidence. New real profiles begin blank; the public demo profile is fictional. Find gigs supports posting-text intake and up to 20 JSON records per import. The backend normalizes HTTPS URLs, skips duplicates and lists up to 1,000 opportunities. Upstream scraper records without descriptions are skipped by the local conversion utility.
+
+Scores use four transparent dimensions with weights adapted from AI Job Search: technical 30%, evidence overlap 25%, delivery location 15%, service alignment 30%. Unknown requirements and unknown working locations receive low provisional scores. Scores are not AI conclusions. Deadline, remote-only and declared-language conflicts are visible gates; geographic eligibility remains a manual verification.
+
+Prepare proposal template uses only saved service and evidence. Add scope, price, timeline and proof links yourself. Build AI review prompt creates a local prompt for you to copy to your assistant. The app sends no proposals, messages or AI requests. Save edits before Move to pipeline; conversion keeps one linked lead even when retried. Lead follow-ups remain under Pipeline.
+
+Scheduled discovery is off initially. Turn it on in My service after reviewing up to three search phrases. The runner sends those phrases to freehire.me, filters for explicit remote contract/freelance/project postings, and posts results to the protected backend through the existing GitHub identity. It does not scrape signed-in Upwork or LinkedIn. The provider can return no suitable postings or be unavailable; status is shown beside Find gigs.
+
+See THIRD_PARTY_NOTICES.md and playbooks/freelance-workflow.md for upstream attribution and a full weekly workflow.

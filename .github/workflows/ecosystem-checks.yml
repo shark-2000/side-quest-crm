@@ -1,0 +1,31 @@
+name: Check freelance ecosystem
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'worker/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'vendor/**'
+      - 'tools/**'
+      - '.github/workflows/ecosystem-checks.yml'
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Build and test
+        run: |
+          node scripts/build-crm-pages.mjs
+          node scripts/build-worker.mjs
+          node tests/enquiries.test.mjs
+          node tests/crm.test.mjs
+          node tests/ecosystem.test.mjs
+          bash scripts/build.sh
+          node scripts/validate-artifact.mjs

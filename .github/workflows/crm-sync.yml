@@ -8,6 +8,8 @@ on:
     paths:
       - '.github/workflows/crm-sync.yml'
       - 'scripts/crm-sync.mjs'
+      - 'scripts/opportunity-scout.mjs'
+      - 'worker/ecosystem-core.js'
 permissions:
   contents: read
   id-token: write

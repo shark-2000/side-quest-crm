@@ -1,8 +1,9 @@
+import {renderCRM} from './render-crm.mjs';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
-let html=await readFile('worker/crm.html','utf8');
-html=html.replace('<title>Side Quest CRM | Katyayan</title>','<title>Side Quest CRM | Freelance pipeline</title><meta name="description" content="A lightweight freelance CRM with a five-stage pipeline and GitHub Actions follow-up processing. Try the public sample workspace or open the private CRM.">');
+let html=await renderCRM();
+html=html.replace('<title>Side Quest CRM | Katyayan</title>','<title>Side Quest CRM | Freelance pipeline</title><meta name="description" content="A freelance workspace for opportunity discovery, fit ranking, proposal preparation and client follow-ups. Try the public sample workspace or open the private CRM.">');
 html=html.replace('<a href="/signout-with-chatgpt?return_to=%2F">Sign out</a>','<a href="https://github.com/shark-2000/side-quest-crm">Source ↗</a>');
-html=html.replace('<main>','<main><aside class="automation" style="margin:0 0 24px;border:2px solid var(--purple);background:#eee4ff"><div><strong>✦ Public demo. Your next client starts here.</strong><p>These are fictional leads. Try adding one or changing its stage. Demo changes reset when you reload.</p></div><a class="button" style="text-decoration:none;white-space:nowrap" href="https://katyayan-cloud-data.bubblymink4.chatgpt.site/crm">Open private CRM ↗</a></aside>');
+html=html.replace('<main>','<main><aside class="automation" style="margin:0 0 24px;border:2px solid var(--purple);background:#eee4ff"><div><strong>✦ Public demo. Your next client starts here.</strong><p>Fictional leads, gigs and profile. Try the full workflow. Demo changes reset when you reload.</p></div><a class="button" style="text-decoration:none;white-space:nowrap" href="https://katyayan-cloud-data.bubblymink4.chatgpt.site/crm">Open private CRM ↗</a></aside>');
 html=html.replace('Your enquiries, opportunities and next moves in one place.','Your opportunities and next moves in one place. Try the sample workspace.');
 html=html.replace('GitHub Actions keeps your follow-up digest current.','The private workspace runs on GitHub Actions.');
 html=html.replace('For leads you find through proposals, referrals or conversations.','Add a fictional opportunity to explore the demo.');
@@ -16,10 +17,25 @@ const demoLeads=[
  {name:'Riley Demo',company:'Example Agency',source:'agency',stage:'won',message:'Build a compact campaign performance dashboard.',value:'USD 500'},
  {name:'Casey Demo',company:'Sample Ventures',source:'linkedin',stage:'lost',message:'Exploratory pipeline project. Budget postponed.'}
 ].map((lead,i)=>({id:'demo-'+i,reference:'DEMO-'+(i+1),email:'',followUp:'',notes:'',value:'',version:0,createdAt:new Date().toISOString(),...lead}));
+const demoProfile={...structuredClone(ECO_DEFAULT_PROFILE),service:'SQL reporting and dashboard automation',skills:['SQL','Power BI','Excel'],evidence:'Demo only: built a sample SQL reporting dashboard and Excel cleanup workflow.'};
+const demoGigs=[
+ {title:'SQL dashboard reporting project',company:'Sample Retail',source:'upwork',workMode:'remote',description:'Create a SQL reporting dashboard from weekly sales exports. Power BI and SQL required.',requiredSkills:['SQL','Power BI'],budget:'USD 350'},
+ {title:'Automate Excel reporting',company:'Example Studio',source:'referral',workMode:'remote',description:'Clean Excel files and automate weekly reporting. Python required.',requiredSkills:['Excel','Python'],budget:'USD 200'},
+ {title:'On-site data platform contract',company:'Sample Office',source:'linkedin',workMode:'onsite',description:'On-site SQL reporting contract.',requiredSkills:['SQL']}
+].map((o,i)=>({id:'sample-op-'+i,company:'',url:'',budget:'',deadline:'',postedDate:'',requiredLanguage:'',requiredSkills:[],notes:'',proposal:'',leadId:'',version:0,status:'new',createdAt:new Date().toISOString(),...o}));
 async function api(path,options={}){
  const method=options.method||'GET';
- if(path==='/api/crm/leads'&&method==='GET')return {leads:structuredClone(demoLeads),today:demoToday,truncated:false,automation:null};
  const data=JSON.parse(options.body||'{}');
+ if(path==='/api/crm/profile'&&method==='GET')return {profile:structuredClone(demoProfile)};
+ if(path==='/api/crm/profile'&&method==='PUT'){Object.assign(demoProfile,data,{version:data.version+1});return {profile:structuredClone(demoProfile)}}
+ if(path==='/api/crm/opportunities'&&method==='GET')return {opportunities:demoGigs.map(o=>({...structuredClone(o),assessment:ecoAssess(o,demoProfile,demoToday)})).sort((a,b)=>(b.assessment.score??-1)-(a.assessment.score??-1)),truncated:false,discovery:null};
+ if(path==='/api/crm/opportunities'&&method==='POST'){let added=0,duplicates=0;for(const raw of data.opportunities||[data]){const o=ecoOpportunity(raw);if(demoGigs.some(g=>o.url?g.url===o.url:g.title===o.title&&g.company===o.company)){duplicates++;continue}demoGigs.unshift({...o,id:crypto.randomUUID(),status:'new',notes:'',proposal:'',leadId:'',version:0,createdAt:new Date().toISOString()});added++;}return {added,duplicates}}
+ if(path.startsWith('/api/crm/opportunities/')){const parts=path.split('/'),o=demoGigs.find(g=>g.id===parts[4]);if(!o)throw Error('Demo opportunity not found.');if(data.version!==o.version)throw Error('Reload before saving.');
+ if(method==='PATCH'){Object.assign(o,data,{version:data.version+1});return {ok:true}}
+ if(method==='POST'&&parts[5]==='convert'){if(ecoAssess(o,demoProfile,demoToday).gates.length)throw Error('Resolve the constraints first.');if(!o.leadId){o.leadId=crypto.randomUUID();demoLeads.unshift({id:o.leadId,reference:'DEMO',name:o.company||o.title,company:o.company,email:'',message:o.title+'\\n'+o.description,source:o.source,stage:'new',followUp:'',notes:'',value:'',version:0,createdAt:new Date().toISOString()});}o.status='converted';o.version++;return {leadId:o.leadId}}
+ }
+
+ if(path==='/api/crm/leads'&&method==='GET')return {leads:structuredClone(demoLeads),today:demoToday,truncated:false,automation:null};
  if(path==='/api/crm/leads'&&method==='POST'){
   demoLeads.unshift({id:crypto.randomUUID(),reference:'DEMO',email:'',company:'',followUp:'',notes:'',value:'',stage:'new',version:0,createdAt:new Date().toISOString(),...data});return {ok:true};
  }

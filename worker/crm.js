@@ -22,12 +22,12 @@ async function crmLead(env,record){const meta=await env.BUCKET.get('crm/leads/'+
 async function crmList(env){let cursor,records=[];do{const page=await env.BUCKET.list({prefix:'enquiries/',limit:100,cursor});for(let i=0;i<page.objects.length;i+=20){const slice=page.objects.slice(i,i+20);const rows=await Promise.all(slice.map(async o=>{const obj=await env.BUCKET.get(o.key);return obj?crmLead(env,await obj.json()):null}));records.push(...rows.filter(Boolean));}cursor=page.truncated?page.cursor:undefined;}while(cursor&&records.length<1000);records.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));return {leads:records,truncated:Boolean(cursor)};}
 async function crmBody(request){if(!request.headers.get('Content-Type')?.startsWith('application/json'))throw Error('Use JSON.');const text=await request.text();if(text.length>12000)throw Error('Request is too large.');const d=JSON.parse(text);if(!d||typeof d!=='object'||Array.isArray(d))throw Error('Invalid request.');return d;}
 export async function handleCRM(request,env,crmPage){
- const u=new URL(request.url),isRun=['/api/crm/run','/api/crm/digest'].includes(u.pathname);
+ const u=new URL(request.url),isRun=['/api/crm/run','/api/crm/digest','/api/crm/discover'].includes(u.pathname);
  if(isRun){
   if(request.method!=='POST')return crmJSON({error:'Method not allowed.'},405);
   const claims=await verifyGithubToken(request.headers.get('Authorization')?.replace(/^Bearer /,''),CRM_ORIGIN+'/crm');if(!claims)return crmJSON({error:'GitHub workflow authorization required.'},401);
   if(!env.BUCKET)return crmJSON({error:'CRM storage unavailable.'},503);
-  try{if(u.pathname==='/api/crm/run'){const {leads,truncated}=await crmList(env);return crmJSON({today:crmToday(),truncated,leads:leads.map(l=>({id:l.id,stage:l.stage,followUp:l.followUp}))});}
+  try{if(u.pathname==='/api/crm/discover')return ecoDiscovery(request,env,claims);if(u.pathname==='/api/crm/run'){const {leads,truncated}=await crmList(env);const profile=await ecoProfile(env);return crmJSON({discovery:{enabled:profile.discoveryEnabled,queries:profile.queries},today:crmToday(),truncated,leads:leads.map(l=>({id:l.id,stage:l.stage,followUp:l.followUp}))});}
  const d=await crmBody(request);if(d.today!==crmToday()||!['total','active','won'].every(k=>Number.isInteger(d[k])&&d[k]>=0&&d[k]<=1000)||d.active>d.total||d.won>d.total||!Array.isArray(d.due)||d.due.length>1000||!d.due.every(id=>typeof id==='string'&&/^[0-9a-f-]{36}$/i.test(id))||typeof d.truncated!=='boolean')return crmJSON({error:'Invalid digest.'},400);
  const summary={updatedAt:new Date().toISOString(),runId:claims.run_id,today:d.today,truncated:d.truncated,total:d.total,active:d.active,won:d.won,due:[...new Set(d.due)]};await env.BUCKET.put('crm/summary.json',JSON.stringify(summary));return crmJSON({ok:true,runId:claims.run_id});}catch{return crmJSON({error:'CRM refresh failed.'},503);}
  }
@@ -37,6 +37,7 @@ export async function handleCRM(request,env,crmPage){
  if(!env.BUCKET)return crmJSON({error:'CRM storage unavailable.'},503);
  if(request.method!=='GET'&&request.headers.get('Origin')!==CRM_ORIGIN)return crmJSON({error:'Origin not allowed.'},403);
  try{
+  const ecosystem=await handleEcosystem(request,env);if(ecosystem)return ecosystem;
   if(u.pathname==='/api/crm/leads'&&request.method==='GET'){const list=await crmList(env);const obj=await env.BUCKET.get('crm/summary.json');return crmJSON({...list,today:crmToday(),automation:obj?await obj.json():null});}
   if(u.pathname==='/api/crm/leads'&&request.method==='POST'){
    const d=await crmBody(request),text=(v,max)=>typeof v==='string'&&v.trim().length<=max?v.trim():null;const name=text(d.name,100),company=text(d.company||'',150),email=text(d.email||'',254),message=text(d.message,3000);

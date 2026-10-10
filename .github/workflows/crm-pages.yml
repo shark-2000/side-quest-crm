@@ -5,6 +5,9 @@ on:
     paths:
       - 'docs/**'
       - 'worker/crm.html'
+      - 'worker/ecosystem-*.js'
+      - 'worker/ecosystem-panels.html'
+      - 'scripts/render-crm.mjs'
       - 'scripts/build-crm-pages.mjs'
       - '.github/workflows/crm-pages.yml'
   workflow_dispatch:
